@@ -26,9 +26,9 @@ public class applications extends Application {
     private TextField flagField = new TextField();
     private Point3D[][] coor3D;
     private Point2D coordinate;
-    private final int size = 15, minRow=10,minColl=10, maxRow=24, maxColl=30;
+    private final int size = 15, minRow = 10, minColl = 10, maxRow = 24, maxColl = 30;
     private boolean buildingBombs = false;
-    private int row = 10, coll = 10, countBobm = 9, countEmptyCell=0;
+    private int row = 10, coll = 10, countBobm = 9, countEmptyCell = 0;
     private boolean[][] status;
     private int baseX, baseY, offsetX;
     private Pane boardPane;
@@ -47,7 +47,8 @@ public class applications extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception { // стартовый метод
 
-        widthWindow = 200; heightWindow = 200;
+        widthWindow = 200;
+        heightWindow = 200;
         window = primaryStage;
         mainPane = new AnchorPane();
         boardPane = new Pane();
@@ -96,7 +97,7 @@ public class applications extends Application {
         threadTimer.start();
 
 
-        buildingBombs=true;
+        buildingBombs = true;
 
         baseX = 0;
         baseY = 40;
@@ -110,7 +111,7 @@ public class applications extends Application {
             for (int j = 0; j < coll; j++) {
                 status[i][j] = false;
                 coordinate = new Point2D(baseX, baseY);
-                coor3D[i][j] = Point3D.getPoint2D(i , j);
+                coor3D[i][j] = Point3D.getPoint2D(i, j);
                 hexagons[i][j] = new Hexagon(coordinate, size);
                 if (j % 2 == 0) {
                     offsetX = baseX;
@@ -122,24 +123,7 @@ public class applications extends Application {
             baseY = 40;
             baseX += vertical(size) + size / 3;
         }
-      /*  int x,y,countSetBomb = 0;
-        while (countSetBomb < countBobm) {
-            do {
-               x = rnd.nextInt(row);
-               y = rnd.nextInt(coll);
-            } while (hexagons[x][y].isHasBomb());
-            hexagons[x][y].setHasBomb(true);
-            shaheed.add(new Pair<>(x, y));
-            countSetBomb++;
-        }
-        for (y = 0; y < coll; y++) {
-            for (x = 0; x < row; x++) {
-                long bombs = getNeighbors(x, y).stream().filter(t -> t.isHasBomb()).count();
-                if (bombs > 0) {
-                    hexagons[x][y].setCountBombAround(bombs);
-                }
-            }
-        }*/
+
         for (Hexagon[] line : hexagons) {
             for (Hexagon test : line) {
                 boardPane.getChildren().add(test);
@@ -147,8 +131,8 @@ public class applications extends Application {
         }
 
 
-        widthWindow = (row * width) + size*3 ;
-        heightWindow =(coll * (height-size/3))+size*6;
+        widthWindow = (row * width) + size * 3;
+        heightWindow = (coll * (height - size / 3)) + size * 6;
         window.setWidth(widthWindow);
         window.setHeight(heightWindow);
         boardPane.setOnMouseClicked(e -> {
@@ -157,23 +141,24 @@ public class applications extends Application {
                     if (((e.getX() >= hexagons[i][j].getTranslateX()) && (e.getX() <= hexagons[i][j].getTranslateX() + width)) &&
                             ((e.getY() >= hexagons[i][j].getTranslateY()) && (e.getY() <= hexagons[i][j].getTranslateY() + height))) {
                         if (e.getButton().equals(MouseButton.SECONDARY)) {
-                            if (countCheckCells!=0&& !hexagons[i][j].check) {
-                                if(hexagons[i][j].isOpen()) return;
+                            if (countCheckCells != 0 && !hexagons[i][j].check) {
+                                if (hexagons[i][j].isOpen()) return;
                                 hexagons[i][j].setStatusImage(new Image("flag.jpg"));
                                 Platform.runLater(() -> flagField.setText(String.valueOf(--countCheckCells)));
-                            }else {if (countCheckCells == 10) return;
-                                    if (!hexagons[i][j].check & countCheckCells == 0) return;
+                            } else {
+                                if (countCheckCells == 10) return;
+                                if (!hexagons[i][j].check & countCheckCells == 0) return;
                                 hexagons[i][j].setStatusImage(null);
                                 Platform.runLater(() -> flagField.setText(String.valueOf(++countCheckCells)));
                             }
                         } else {
                             if (hexagons[i][j].isHasBomb()) {
                                 for (Pair<Integer, Integer> id : shaheed) {
-                                   try {
-                                       hexagons[id.getKey()][id.getValue()].cellBang();
-                                   }catch (ArrayIndexOutOfBoundsException ex){
-                                   }
-                                   }
+                                    try {
+                                        hexagons[id.getKey()][id.getValue()].cellBang();
+                                    } catch (ArrayIndexOutOfBoundsException ex) {
+                                    }
+                                }
                                 boardPane.setDisable(true);
                                 threadTimer.interrupt();
                                 try {
@@ -188,17 +173,17 @@ public class applications extends Application {
                                 generationBombs();
                                 if (hexagons[i][j].check) return;
                                 receiveClick(i, j);
-                                if (pro()){
+                                if (pro()) {
                                     for (Pair<Integer, Integer> id : shaheed) {
                                         hexagons[id.getKey()][id.getValue()].cellBang();
                                         boardPane.setDisable(true);
                                         try {
                                             timer.stop();
-                                             threadTimer.interrupt();
+                                            threadTimer.interrupt();
                                             threadTimer = null;
                                         } catch (NullPointerException e1) {
                                         }
-                                        }
+                                    }
                                     showWin();
                                 }
                             }
@@ -208,39 +193,38 @@ public class applications extends Application {
     }
 
 
-
     private List<Hexagon> getNeighbors(int x, int y) {
         List<Hexagon> neighbors = new ArrayList<>();
-        int[] even=new int[]{
-                0,-1,
-                1,-1,
-                -1,0,
-                1,0,
-                0,1,
-                1,1
+        int[] even = new int[]{
+                0, -1,
+                1, -1,
+                -1, 0,
+                1, 0,
+                0, 1,
+                1, 1
         };
         int[] odd = new int[]{
-                -1,-1,
-                0,-1,
-                -1,0,
-                1,0,
-                -1,1,
-                0,1
+                -1, -1,
+                0, -1,
+                -1, 0,
+                1, 0,
+                -1, 1,
+                0, 1
         };
-        if(y%2!=0){
-        for (int i = 0; i < even.length; i++) {
-            int dx = even[i];
-            int dy = even[++i];
+        if (y % 2 != 0) {
+            for (int i = 0; i < even.length; i++) {
+                int dx = even[i];
+                int dy = even[++i];
 
-            int newX = x + dx;
-            int newY = y + dy;
+                int newX = x + dx;
+                int newY = y + dy;
 
-            if (newX >= 0 && newX < row
-                    && newY >= 0 && newY < coll) {
-                neighbors.add(hexagons[newX][newY]);
+                if (newX >= 0 && newX < row
+                        && newY >= 0 && newY < coll) {
+                    neighbors.add(hexagons[newX][newY]);
+                }
             }
-        }}
-        else{
+        } else {
             for (int i = 0; i < odd.length; i++) {
                 int dx = odd[i];
                 int dy = odd[++i];
@@ -259,27 +243,29 @@ public class applications extends Application {
         return neighbors;
     }
 
-    private void showWin(){
+    private void showWin() {
         ButtonType buttonTypeOk = new ButtonType("Повторить", ButtonBar.ButtonData.OK_DONE);
         ButtonType buttonTypeCansel = new ButtonType("Нет", ButtonBar.ButtonData.OK_DONE);
-        Alert winner =new Alert(Alert.AlertType.CONFIRMATION, "Желаете ли вы начать новую игру??",buttonTypeOk,buttonTypeCansel);
+        Alert winner = new Alert(Alert.AlertType.CONFIRMATION, "Желаете ли вы начать новую игру??", buttonTypeOk, buttonTypeCansel);
 
         winner.setTitle("Выигрыш!!!");
-        winner.setHeaderText("Вы выиграли в игре за время: " + timerField.getText()+"\n");
+        winner.setHeaderText("Вы выиграли в игре за время: " + timerField.getText() + "\n");
 
 
         Optional<ButtonType> option = winner.showAndWait();
-                    if (option.get() ==buttonTypeOk) {
-                        createGame("Начать новую игру?");
-                    }
+        if (option.get() == buttonTypeOk) {
+            createGame("Начать новую игру?");
+        }
     }
+
     private void createGame(String title) {//метод запроса на создание поля
 
         try {
-            if (threadTimer.isAlive()){
-            timer.stop();
-            threadTimer.interrupt();
-            threadTimer = null;}
+            if (threadTimer.isAlive()) {
+                timer.stop();
+                threadTimer.interrupt();
+                threadTimer = null;
+            }
         } catch (NullPointerException e1) {
         }
         ButtonType buttonTypeOk = new ButtonType("Да", ButtonBar.ButtonData.OK_DONE);
@@ -306,19 +292,19 @@ public class applications extends Application {
         inputDialog.getDialogPane().getButtonTypes().add(buttonCancel);
         inputDialog.setResultConverter(param -> {
             if (param.equals(buttonTypeOk)) {
-                coll = (Integer.parseInt(rowField.getText())< maxRow)?
-                        (Integer.parseInt(rowField.getText())>minRow)?
-                                Integer.parseInt(rowField.getText()):minRow : maxRow  ;
-                row = (Integer.parseInt(collField.getText())< maxColl)?
-                        (Integer.parseInt(collField.getText())>minColl)?
-                                Integer.parseInt(collField.getText()):minColl : maxColl  ;
-                int maxBomb = row * coll -5;
+                coll = (Integer.parseInt(rowField.getText()) < maxRow) ?
+                        (Integer.parseInt(rowField.getText()) > minRow) ?
+                                Integer.parseInt(rowField.getText()) : minRow : maxRow;
+                row = (Integer.parseInt(collField.getText()) < maxColl) ?
+                        (Integer.parseInt(collField.getText()) > minColl) ?
+                                Integer.parseInt(collField.getText()) : minColl : maxColl;
+                int maxBomb = row * coll - 5;
                 int minBomb = 3;
-                countBobm = (Integer.parseInt(bombField.getText())< row * coll)?
-                        (Integer.parseInt(bombField.getText())>minBomb)?
-                                Integer.parseInt(bombField.getText()):minBomb : maxBomb  ;
+                countBobm = (Integer.parseInt(bombField.getText()) < row * coll) ?
+                        (Integer.parseInt(bombField.getText()) > minBomb) ?
+                                Integer.parseInt(bombField.getText()) : minBomb : maxBomb;
                 countCheckCells = countBobm;
-                countEmptyCell = row*coll - countBobm;
+                countEmptyCell = row * coll - countBobm;
                 System.out.println(countEmptyCell);
                 flagField.setText(String.valueOf(countCheckCells));
                 hexagons = null;
@@ -343,10 +329,10 @@ public class applications extends Application {
         int cell_y = y;
         int result = hexagons[cell_x][cell_y].openCell();
         if (hexagons[cell_x][cell_y].getBombAround() != 0) {
-            status[cell_x][cell_y]=true;
+            status[cell_x][cell_y] = true;
             return 0;
         }
-        status[cell_x][cell_y]=true;
+        status[cell_x][cell_y] = true;
         if (result == 1) {
             try {
                 receiveClick(x + 1, y);
@@ -389,38 +375,38 @@ public class applications extends Application {
             for (boolean b : line)
                 if (b)
                     i++;
-        if(i==countEmptyCell) return true;
+        if (i == countEmptyCell) return true;
         return false;
     }
 
 
-    private void generationBombs(){
+    private void generationBombs() {
         System.out.println(buildingBombs);
-        if (!buildingBombs){
+        if (!buildingBombs) {
             return;
         }
-        buildingBombs=false;
-        int x,y,countSetBomb = 0;
+        buildingBombs = false;
+        int x, y, countSetBomb = 0;
         Random rnd = new Random();
 
 
-            while (countSetBomb < countBobm) {
-                do {
-                    x = rnd.nextInt(row);
-                    y = rnd.nextInt(coll);
-                } while (hexagons[x][y].isHasBomb()||hexagons[x][y].isOpen());
-                hexagons[x][y].setHasBomb(true);
-                shaheed.add(new Pair<>(x, y));
-                countSetBomb++;
-            }
-            for (y = 0; y < coll; y++) {
-                for (x = 0; x < row; x++) {
-                    long bombs = getNeighbors(x, y).stream().filter(t -> t.isHasBomb()).count();
-                    if (bombs > 0) {
-                        hexagons[x][y].setCountBombAround(bombs);
-                    }
+        while (countSetBomb < countBobm) {
+            do {
+                x = rnd.nextInt(row);
+                y = rnd.nextInt(coll);
+            } while (hexagons[x][y].isHasBomb() || hexagons[x][y].isOpen());
+            hexagons[x][y].setHasBomb(true);
+            shaheed.add(new Pair<>(x, y));
+            countSetBomb++;
+        }
+        for (y = 0; y < coll; y++) {
+            for (x = 0; x < row; x++) {
+                long bombs = getNeighbors(x, y).stream().filter(t -> t.isHasBomb()).count();
+                if (bombs > 0) {
+                    hexagons[x][y].setCountBombAround(bombs);
                 }
             }
+        }
     }
 
 
