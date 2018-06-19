@@ -1,8 +1,15 @@
+/**
+ * Компилировать в mvnConsole
+ * mvn clean compile assembly:single
+ */
+
 package miner;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -15,11 +22,12 @@ import javafx.stage.WindowEvent;
 import javafx.util.Pair;
 
 
+import java.io.IOException;
 import java.util.*;
 
 
 public class applications extends Application {
-
+    private boolean bah = false;
     private double widthWindow, heightWindow;
     private Thread threadTimer;
     private TextField timerField = new TextField();
@@ -27,6 +35,7 @@ public class applications extends Application {
     private Point3D[][] coor3D;
     private Point2D coordinate;
     private final int size = 15, minRow = 10, minColl = 10, maxRow = 24, maxColl = 30;
+    private final double K = 0.7;
     private boolean buildingBombs = false;
     private int row = 10, coll = 10, countBobm = 9, countEmptyCell = 0;
     private boolean[][] status;
@@ -42,7 +51,7 @@ public class applications extends Application {
     private double height = size * 2;
     private int countCheckCells;
 
-    private TimerGame timer = new TimerGame(10);
+    private TimerGame timer;
 
     @Override
     public void start(Stage primaryStage) throws Exception { // стартовый метод
@@ -59,14 +68,14 @@ public class applications extends Application {
         mGame.getItems().addAll(itemNewGame, itemExit);
         menu.getMenus().addAll(mGame, mHelp);
         itemNewGame.setOnAction(event -> {
-            createGame("Новая игра");
+            createGame("Новая игра", 0, 0);
         });
         itemExit.setOnAction(e -> {
             shutdown();
         });
         mainPane.getChildren().add(boardPane);
         menu.prefWidthProperty().bind(window.widthProperty());
-        timerField.textProperty().bind(timer.messageProperty());
+
         timerField.setDisable(true);
         flagField.setDisable(true);
         timerField.setFocusTraversable(false);
@@ -94,8 +103,11 @@ public class applications extends Application {
     }
 
     private void buildBoard() {
+        timer = new TimerGame(10);
+        threadTimer = new Thread(timer);
         threadTimer.start();
-
+        timerField.clear();
+        timerField.textProperty().bind(timer.messageProperty());
 
         buildingBombs = true;
 
@@ -121,7 +133,9 @@ public class applications extends Application {
                 baseY += horizontal(size) + (0.66 * size);
             }
             baseY = 40;
-            baseX += vertical(size) + size / 3;
+            if (coll % 2 == 0)
+                baseX += vertical(size) + size / 3;
+            else baseX += vertical(size) - 8;
         }
 
         for (Hexagon[] line : hexagons) {
@@ -167,15 +181,20 @@ public class applications extends Application {
                                     e1.printStackTrace();
                                 }
                                 threadTimer = null;
-                                createGame("Повторить?");
+                                bah = true;
+                                createGame("Повторить?", i, j);
                                 return;
                             } else {
-                                generationBombs();
+                                generationBombs(i, j);
                                 if (hexagons[i][j].check) return;
                                 receiveClick(i, j);
                                 if (pro()) {
                                     for (Pair<Integer, Integer> id : shaheed) {
-                                        hexagons[id.getKey()][id.getValue()].cellBang();
+                                        try {
+                                            hexagons[id.getKey()][id.getValue()].cellBang();
+                                        } catch (ArrayIndexOutOfBoundsException e3) {
+
+                                        }
                                         boardPane.setDisable(true);
                                         try {
                                             timer.stop();
@@ -244,6 +263,14 @@ public class applications extends Application {
     }
 
     private void showWin() {
+        try {
+            if (threadTimer.isAlive()) {
+                timer.stop();
+                threadTimer.interrupt();
+                threadTimer = null;
+            }
+        } catch (NullPointerException e1) {
+        }
         ButtonType buttonTypeOk = new ButtonType("Повторить", ButtonBar.ButtonData.OK_DONE);
         ButtonType buttonTypeCansel = new ButtonType("Нет", ButtonBar.ButtonData.OK_DONE);
         Alert winner = new Alert(Alert.AlertType.CONFIRMATION, "Желаете ли вы начать новую игру??", buttonTypeOk, buttonTypeCansel);
@@ -254,11 +281,11 @@ public class applications extends Application {
 
         Optional<ButtonType> option = winner.showAndWait();
         if (option.get() == buttonTypeOk) {
-            createGame("Начать новую игру?");
+            createGame("Начать новую игру?", 0, 0);
         }
     }
 
-    private void createGame(String title) {//метод запроса на создание поля
+    private void createGame(String title, int i, int j) {//метод запроса на создание поля
 
         try {
             if (threadTimer.isAlive()) {
@@ -268,6 +295,7 @@ public class applications extends Application {
             }
         } catch (NullPointerException e1) {
         }
+
         ButtonType buttonTypeOk = new ButtonType("Да", ButtonBar.ButtonData.OK_DONE);
         ButtonType buttonCancel = new ButtonType("Нет", ButtonBar.ButtonData.CANCEL_CLOSE);
         Dialog<Pair<Pair<String, String>, String>> inputDialog = new Dialog<>();
@@ -287,6 +315,12 @@ public class applications extends Application {
         grid.add(collField, 2, 2);
         grid.add(label3, 1, 3);
         grid.add(bombField, 2, 3);
+        if (bah) {
+            bah = false;
+            Label label4 = new Label("Вы подорвались на ячейке (" + (j + 1) + "," + (i + 1) + ")");
+            grid.add(label4, 1, 4);
+            hexagons[i][j].setFill();
+        }
         inputDialog.getDialogPane().setContent(grid);
         inputDialog.getDialogPane().getButtonTypes().add(buttonTypeOk);
         inputDialog.getDialogPane().getButtonTypes().add(buttonCancel);
@@ -295,14 +329,16 @@ public class applications extends Application {
                 coll = (Integer.parseInt(rowField.getText()) < maxRow) ?
                         (Integer.parseInt(rowField.getText()) > minRow) ?
                                 Integer.parseInt(rowField.getText()) : minRow : maxRow;
+
                 row = (Integer.parseInt(collField.getText()) < maxColl) ?
                         (Integer.parseInt(collField.getText()) > minColl) ?
                                 Integer.parseInt(collField.getText()) : minColl : maxColl;
-                int maxBomb = row * coll - 5;
+                int maxBomb1 = (int) ((row * coll) * K);
                 int minBomb = 3;
-                countBobm = (Integer.parseInt(bombField.getText()) < row * coll) ?
+                countBobm = (Integer.parseInt(bombField.getText()) < maxBomb1) ?
                         (Integer.parseInt(bombField.getText()) > minBomb) ?
-                                Integer.parseInt(bombField.getText()) : minBomb : maxBomb;
+                                Integer.parseInt(bombField.getText()) : minBomb : maxBomb1;
+
                 countCheckCells = countBobm;
                 countEmptyCell = row * coll - countBobm;
                 System.out.println(countEmptyCell);
@@ -311,8 +347,7 @@ public class applications extends Application {
                 System.out.println(row + " " + coll + "    " + countBobm);
                 Platform.runLater(() -> {
                     boardPane.getChildren().clear();//очищаем поле от старых элементов
-                    threadTimer = new Thread(timer);
-                    timerField.textProperty().bind(timer.messageProperty());
+
                     buildBoard();
                 });
             }
@@ -334,30 +369,116 @@ public class applications extends Application {
         }
         status[cell_x][cell_y] = true;
         if (result == 1) {
-            try {
-                receiveClick(x + 1, y);
-            } catch (ArrayIndexOutOfBoundsException e) {
-            }
-            try {
-                receiveClick(x - 1, y);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                //ignore
-            }
-            try {
-                receiveClick(x, y + 1);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                //ignore
-            }
-            try {
-                receiveClick(x, y - 1);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                //ignore
+
+
+            int[] even = new int[]{
+                    0, -1,
+                    1, -1,
+                    -1, 0,
+                    1, 0,
+                    0, 1,
+                    1, 1
+            };
+            int[] odd = new int[]{
+                    -1, -1,
+                    0, -1,
+                    -1, 0,
+                    1, 0,
+                    -1, 1,
+                    0, 1
+            };
+            if (y % 2 != 0) {
+                for (int i = 0; i < even.length; i++) {
+                    int dx = even[i];
+                    int dy = even[++i];
+
+                    int newX = x + dx;
+                    int newY = y + dy;
+
+                    if (newX >= 0 && newX < row
+                            && newY >= 0 && newY < coll) {
+
+                        try {
+                            receiveClick(newX, newY);
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                        }
+                    }
+                }
+            } else {
+                for (int i = 0; i < odd.length; i++) {
+                    int dx = odd[i];
+                    int dy = odd[++i];
+
+                    int newX = x + dx;
+                    int newY = y + dy;
+
+                    if (newX >= 0 && newX < row
+                            && newY >= 0 && newY < coll) {
+                        try {
+                            receiveClick(newX, newY);
+                        } catch (ArrayIndexOutOfBoundsException e) {
+                        }
+                    }
+                }
             }
             return 0;
         }
+
         return result;
     }
 
+    /* private int receiveClick(int x, int y) {
+         int cell_x = x;
+         int cell_y = y;
+         int result = hexagons[cell_x][cell_y].openCell();
+         if (hexagons[cell_x][cell_y].getBombAround() != 0) {
+             status[cell_x][cell_y]=true;
+             return 0;
+         }
+         status[cell_x][cell_y]=true;
+         if (result == 1) {
+             try {
+                 receiveClick(x + 1, y);
+             } catch (ArrayIndexOutOfBoundsException e) {
+             }
+             try {
+                 receiveClick(x + 1, y+1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+             }
+             try {
+                 receiveClick(x + 1, y-1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+             }
+
+
+             try {
+                 receiveClick(x - 1, y);
+             } catch (ArrayIndexOutOfBoundsException e) {
+                 //ignore
+             }
+             try {
+                 receiveClick(x - 1, y+1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+             }
+             try {
+                 receiveClick(x - 1, y-1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+             }
+             try {
+                 receiveClick(x, y + 1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+                 //ignore
+             }
+             try {
+                 receiveClick(x, y - 1);
+             } catch (ArrayIndexOutOfBoundsException e) {
+                 //ignore
+             }
+             return 0;
+         }
+         return result;
+     }
+ */
     private double horizontal(int size) {
         return Math.sqrt(3) / 2 * size;
     }
@@ -380,7 +501,7 @@ public class applications extends Application {
     }
 
 
-    private void generationBombs() {
+    private void generationBombs(int q, int w) {
         System.out.println(buildingBombs);
         if (!buildingBombs) {
             return;
@@ -390,10 +511,14 @@ public class applications extends Application {
         Random rnd = new Random();
 
 
+        t:
         while (countSetBomb < countBobm) {
             do {
                 x = rnd.nextInt(row);
                 y = rnd.nextInt(coll);
+                if ((x == q) && (y == w)) {
+                    continue t;
+                }
             } while (hexagons[x][y].isHasBomb() || hexagons[x][y].isOpen());
             hexagons[x][y].setHasBomb(true);
             shaheed.add(new Pair<>(x, y));
@@ -407,6 +532,7 @@ public class applications extends Application {
                 }
             }
         }
+
     }
 
 

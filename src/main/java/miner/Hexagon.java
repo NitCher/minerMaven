@@ -121,4 +121,9 @@ public class Hexagon extends StackPane {
         hasBomb = active;
         image = new Image("bomb.jpg");
     }
+
+    public void setFill() {
+
+        hexagon.setFill(Color.RED);
+    }
 }
